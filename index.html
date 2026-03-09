@@ -267,7 +267,7 @@ function App(){
               </div>
               <div style={{fontSize:13,fontWeight:500,color:BURG,letterSpacing:2,marginBottom:4,fontFamily:"DM Mono,monospace"}}>{new Date().toLocaleDateString("ja-JP",{year:"numeric",month:"2-digit",day:"2-digit"})}</div>
               <div style={{fontSize:10,color:"#888",letterSpacing:3,marginBottom:6}}>TODAY TOTAL</div>
-              <div style={{fontFamily:"Syne,sans-serif",fontSize:58,fontWeight:800,letterSpacing:-2,color:onBreak?"#bbb":running?"#1a1a1a":"#ccc",transition:"color 0.3s",lineHeight:1}}>{fmt(elapsed)}</div>
+              <div style={{fontFamily:"Syne,sans-serif",fontSize:"min(58px, 12vw)",fontWeight:800,letterSpacing:-2,color:onBreak?"#bbb":running?"#1a1a1a":"#ccc",transition:"color 0.3s",lineHeight:1}}>{fmt(elapsed)}</div>
               {dayStart&&<div style={{fontSize:10,color:"#aaa",marginTop:6}}>開始 {dayStart.toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})}</div>}
               <div style={{marginTop:18,display:"flex",gap:8,justifyContent:"center",alignItems:"center"}}>
                 <div style={{flex:1}}>
