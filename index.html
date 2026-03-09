@@ -380,6 +380,17 @@ function App(){
         {view==="settings"&&(
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             <div style={{...cardS}}>
+              <div style={{fontSize:10,color:"#777",letterSpacing:3,marginBottom:12}}>ℹ️ ABOUT</div>
+              <div style={{fontSize:12,color:"#1a1a1a",lineHeight:1.9}}>
+                <div>📅 タイマーは深夜0時に自動リセット</div>
+                <div>💾 データはブラウザに自動保存</div>
+                <div>🌙 ブレイク中は時間が止まります</div>
+                <div>🎉 1時間ごとにお祝いが来るよ！</div>
+                <div>✏️ 案件を長押し or 右クリックで編集</div>
+                <div>📌 カレンダーの日付をタップで詳細・編集</div>
+              </div>
+            </div>
+            <div style={{...cardS}}>
               <div style={{fontSize:10,color:"#777",letterSpacing:3,marginBottom:14}}>⏱ WORK LIMITS</div>
               {[{label:"1日の上限 (h)",val:settingMaxD,set:setSettingMaxD,apply:()=>{const n=parseFloat(settingMaxD);if(n>0)setMaxDayH(n);}},{label:"月の上限 (h)",val:settingMaxM,set:setSettingMaxM,apply:()=>{const n=parseFloat(settingMaxM);if(n>0)setMaxMonthH(n);}}].map(({label,val,set,apply})=>(<div key={label} style={{marginBottom:12}}><div style={{fontSize:11,color:"#777",marginBottom:6}}>{label}</div><div style={{display:"flex",gap:8}}><input value={val} onChange={e=>set(e.target.value)} type="number" min="1" style={{flex:1,padding:"9px 12px",border:"1.5px solid rgba(108,39,53,0.2)",borderRadius:10,background:"rgba(255,255,255,0.7)",fontFamily:"DM Mono,monospace",fontSize:13}}/><button className="btn" onClick={apply} style={{padding:"9px 16px",background:BURG,borderRadius:10,color:"#fff",fontWeight:700,fontSize:11}}>保存</button></div></div>))}
               <div style={{fontSize:10,color:"#aaa",marginTop:4}}>現在: 1日 {maxDayH}h / 月 {maxMonthH}h</div>
@@ -391,17 +402,6 @@ function App(){
               </div>
               {showAddInput&&(<div style={{display:"flex",gap:6,marginBottom:10,animation:"fadeIn 0.15s"}}><input autoFocus value={newProjName} onChange={e=>setNewProjName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")handleAddProject();if(e.key==="Escape"){setShowAddInput(false);setNewProjName("");}}} placeholder="新しい案件名..." style={{flex:1,padding:"8px 12px",border:`1.5px solid ${BURG}`,borderRadius:8,background:"rgba(255,255,255,0.8)",fontFamily:"DM Mono,monospace",fontSize:12}}/><button className="btn" onClick={handleAddProject} style={{padding:"8px 14px",background:BURG,borderRadius:8,color:"#fff",fontWeight:700,fontSize:11}}>追加</button></div>)}
               {projects.map((p,i)=>{const col=getColor(i),isEditing=editingProj?.index===i;return(<div key={p} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid rgba(0,0,0,0.06)"}}><div style={{width:10,height:10,borderRadius:"50%",background:col,flexShrink:0}}/>{isEditing?(<><input autoFocus value={editingProj.name} onChange={e=>setEditingProj(ep=>({...ep,name:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")handleRenameProj(i,editingProj.name);if(e.key==="Escape")setEditingProj(null);}} style={{flex:1,padding:"4px 8px",border:`1.5px solid ${BURG}`,borderRadius:6,background:"rgba(255,255,255,0.8)",fontFamily:"DM Mono,monospace",fontSize:12}}/><button className="btn" onClick={()=>handleRenameProj(i,editingProj.name)} style={{fontSize:11,color:BURG,fontWeight:700}}>保存</button></>):(<><span style={{flex:1,fontSize:13}}>{p}</span><button className="btn" onClick={()=>setEditingProj({index:i,name:p})} style={{fontSize:12,color:"#aaa",padding:"2px 6px"}}>✏️</button><button className="btn" onClick={()=>handleDeleteProj(i)} style={{fontSize:12,color:"#ccc",padding:"2px 6px"}}>✕</button></>)}</div>);})}
-            </div>
-            <div style={{...cardS}}>
-              <div style={{fontSize:10,color:"#777",letterSpacing:3,marginBottom:12}}>ℹ️ ABOUT</div>
-              <div style={{fontSize:12,color:"#aaa",lineHeight:1.9}}>
-                <div>📅 タイマーは深夜0時に自動リセット</div>
-                <div>💾 データはブラウザに自動保存</div>
-                <div>🌙 ブレイク中は時間が止まります</div>
-                <div>🎉 1時間ごとにお祝いが来るよ！</div>
-                <div>✏️ 案件を長押し or 右クリックで編集</div>
-                <div>📌 カレンダーの日付をタップで詳細・編集</div>
-              </div>
             </div>
           </div>
         )}
