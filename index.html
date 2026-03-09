@@ -2,12 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Knock, clock..!</title>
-  <link rel="apple-touch-icon" href="icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Knock, clock..!">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍒</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -159,7 +155,9 @@ function App(){
     setNewProjName("");setShowAddInput(false);
   };
   const handleDeleteProj=i=>{
-    const deleted=projects[i],deletedTime=projectTimes[deleted]||0;
+    const name=projects[i];
+    if(running&&activeProject===name)return; // タイマー稼働中のactive案件は削除不可
+    const deleted=name,deletedTime=projectTimes[deleted]||0;
     const next=projects.filter((_,j)=>j!==i);
     setProjects(next);
     setDeletedProj({name:deleted,time:deletedTime,index:i});
@@ -187,6 +185,39 @@ function App(){
     setEditingProj(null);
   };
   const handleDaySave=(dateKey,newTotal,newPTimes)=>{setLogs(prev=>({...prev,[dateKey]:newTotal}));setProjLogs(prev=>({...prev,[dateKey]:newPTimes}));};
+
+  // 削除済み案件に紐づく記録を検出
+  const orphanedDates=Object.entries(projLogs).reduce((acc,[date,times])=>{
+    const orphanNames=Object.keys(times).filter(n=>!projects.includes(n)&&times[n]>0);
+    if(orphanNames.length>0){const secs=orphanNames.reduce((s,n)=>s+(times[n]||0),0);acc.push({date,names:orphanNames,secs});}
+    return acc;
+  },[]).sort((a,b)=>b.date.localeCompare(a.date));
+
+  const handleRestoreProj=(name)=>{
+    if(!projects.includes(name)){setProjects(p=>[...p,name]);}
+  };
+  const handleRecoverLog=(date,orphanNames,secs,targetProj)=>{
+    setProjLogs(prev=>{
+      const updated={...prev,[date]:{...prev[date]}};
+      orphanNames.forEach(n=>{delete updated[date][n];});
+      updated[date][targetProj]=(updated[date][targetProj]||0)+secs;
+      return updated;
+    });
+  };
+  const handleDiscardLog=(date,orphanNames)=>{
+    setProjLogs(prev=>{
+      const updated={...prev,[date]:{...prev[date]}};
+      let lost=0;
+      orphanNames.forEach(n=>{lost+=(updated[date][n]||0);delete updated[date][n];});
+      return updated;
+    });
+    setLogs(prev=>{
+      let lost=0;
+      orphanNames.forEach(n=>{lost+=(projLogs[date]?.[n]||0);});
+      const newTotal=Math.max(0,(prev[date]||0)-lost);
+      return {...prev,[date]:newTotal};
+    });
+  };
   const startLongPress=i=>{longPressRef.current=setTimeout(()=>setEditingProj({index:i,name:projects[i]}),500);};
   const cancelLongPress=()=>clearTimeout(longPressRef.current);
 
@@ -227,7 +258,7 @@ function App(){
               </div>
               <div style={{fontSize:13,fontWeight:500,color:BURG,letterSpacing:2,marginBottom:4,fontFamily:"DM Mono,monospace"}}>{new Date().toLocaleDateString("ja-JP",{year:"numeric",month:"2-digit",day:"2-digit"})}</div>
               <div style={{fontSize:10,color:"#888",letterSpacing:3,marginBottom:6}}>TODAY TOTAL</div>
-              <div style={{fontFamily:"Syne,sans-serif",fontSize:"min(58px, 12vw)",fontWeight:800,letterSpacing:-2,color:onBreak?"#bbb":running?"#1a1a1a":"#ccc",transition:"color 0.3s",lineHeight:1}}>{fmt(elapsed)}</div>
+              <div style={{fontFamily:"Syne,sans-serif",fontSize:"min(58px, 12vw)",fontWeight:800,letterSpacing:-2,color:onBreak?"#bbb":running?"#1a1a1a":"#ccc",transition:"color 0.3s",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{fmt(elapsed)}</div>
               {dayStart&&<div style={{fontSize:10,color:"#aaa",marginTop:6}}>開始 {dayStart.toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})}</div>}
               <div style={{marginTop:18,display:"flex",gap:8,justifyContent:"center",alignItems:"center"}}>
                 <div style={{flex:1}}>
@@ -276,7 +307,7 @@ function App(){
                         </div>
                         <span style={{fontSize:12}}>{fmt(pSec)}</span>
                       </button>
-                      <button className="btn" onClick={()=>handleDeleteProj(i)} style={{width:28,height:28,borderRadius:14,background:"rgba(0,0,0,0.06)",color:"#ccc",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>✕</button>
+                      <button className="btn" onClick={()=>handleDeleteProj(i)} disabled={running&&activeProject===p} title={running&&activeProject===p?"タイマー稼働中は削除できません":""} style={{width:28,height:28,borderRadius:14,background:running&&activeProject===p?"transparent":"rgba(0,0,0,0.06)",color:running&&activeProject===p?`${BURG}55`:"#ccc",fontSize:running&&activeProject===p?11:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:running&&activeProject===p?"not-allowed":"pointer"}}>{running&&activeProject===p?"🔒":"✕"}</button>
                     </>)}
                   </div>);
                 })}
@@ -348,6 +379,31 @@ function App(){
 
         {view==="settings"&&(
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            {orphanedDates.length>0&&(
+              <div style={{...cardS,borderColor:"#F7B731"}}>
+                <div style={{fontSize:10,color:"#8A6A00",letterSpacing:3,marginBottom:10}}>⚠️ RECOVER LOST LOGS</div>
+                <div style={{fontSize:11,color:"#777",marginBottom:12,lineHeight:1.7}}>削除した案件の記録が残っています。<br/>案件を復活させるか、別の案件に付け替えてください。</div>
+                {orphanedDates.map(({date,names,secs})=>(
+                  <div key={date} style={{background:"rgba(247,183,49,0.1)",borderRadius:12,padding:"10px 12px",marginBottom:8}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:11,fontWeight:500,color:"#8A6A00"}}>{date}</span><span style={{fontSize:11,color:"#aaa"}}>{fmtH(secs)}h</span></div>
+                    <div style={{fontSize:10,color:"#aaa",marginBottom:8}}>削除済み: {names.join(" / ")}</div>
+                    <div style={{fontSize:10,color:"#8A6A00",marginBottom:5,fontWeight:600}}>↩️ 案件を復活</div>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
+                      {names.map(n=>(
+                        <button key={n} className="btn" onClick={()=>handleRestoreProj(n,date)} style={{padding:"5px 12px",borderRadius:20,background:BURG,color:"#fff",fontSize:11,fontWeight:600}}>＋ {n}</button>
+                      ))}
+                    </div>
+                    <div style={{fontSize:10,color:"#777",marginBottom:5,fontWeight:600}}>🔀 別の案件に付け替え</div>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                      {projects.map((p,pi)=>(
+                        <button key={p} className="btn" onClick={()=>handleRecoverLog(date,names,secs,p)} style={{padding:"5px 12px",borderRadius:20,background:getColor(pi),color:"#fff",fontSize:11,fontWeight:600}}>{p}</button>
+                      ))}
+                      <button className="btn" onClick={()=>handleDiscardLog(date,names)} style={{padding:"5px 12px",borderRadius:20,background:"rgba(0,0,0,0.07)",color:"#bbb",fontSize:11}}>破棄</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div style={{...cardS}}>
               <div style={{fontSize:10,color:"#777",letterSpacing:3,marginBottom:12}}>ℹ️ ABOUT</div>
               <div style={{fontSize:12,color:"#1a1a1a",lineHeight:1.9}}>
